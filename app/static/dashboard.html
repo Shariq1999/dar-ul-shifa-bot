@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinic Front-Desk Dashboard — Dar ul Shifa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+  <!-- Top Navigation Bar -->
+  <header class="bg-emerald-900 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🏥</span>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Dar ul Shifa Diagnostic Center</h1>
+          <p class="text-xs text-emerald-200">Front Desk & Patient Inquiries Dashboard (Mumbai)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <button onclick="loadAllData()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition flex items-center gap-1.5 shadow-sm">
+          <span>🔄</span> Refresh
+        </button>
+        <a href="/" target="_blank" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm font-medium">
+          <span>💬</span> Open Chat UI
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center text-xl font-bold">📅</div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Total Bookings</p>
+          <p id="stat-total-appts" class="text-2xl font-bold text-slate-800">-</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 bg-blue-100 text-blue-800 rounded-xl flex items-center justify-center text-xl font-bold">☀️</div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Today's Bookings</p>
+          <p id="stat-today-appts" class="text-2xl font-bold text-slate-800">-</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center text-xl font-bold">⏳</div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Pending Callbacks</p>
+          <p id="stat-pending-calls" class="text-2xl font-bold text-amber-700">-</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 bg-purple-100 text-purple-800 rounded-xl flex items-center justify-center text-xl font-bold">🔍</div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Total Inquiries / Leads</p>
+          <p id="stat-total-inquiries" class="text-2xl font-bold text-slate-800">-</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- Tab Header Bar -->
+      <div class="border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+        <div class="flex gap-2">
+          <button id="tab-appts-btn" onclick="switchTab('appts')" class="px-4 py-2 rounded-lg text-sm font-semibold transition bg-emerald-800 text-white shadow-sm">
+            Appointments (<span id="count-appts">0</span>)
+          </button>
+          <button id="tab-inq-btn" onclick="switchTab('inquiries')" class="px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-slate-600 hover:bg-slate-100 border border-slate-200">
+            Detail Requests & Leads (<span id="count-inq">0</span>)
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search patient, phone, query..."
+            oninput="filterCurrentTable()"
+            class="text-xs sm:text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-700 w-48 sm:w-64"
+          />
+          <a id="export-btn" href="/api/export/appointments.csv" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs px-3 py-2 rounded-lg transition font-medium flex items-center gap-1">
+            <span>📥</span> Export CSV
+          </a>
+        </div>
+      </div>
+
+      <!-- Tab 1: Appointments Table -->
+      <div id="section-appts" class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+              <th class="p-3.5 pl-6">Ref #</th>
+              <th class="p-3.5">Patient Name</th>
+              <th class="p-3.5">Mobile Phone</th>
+              <th class="p-3.5">Service Requested</th>
+              <th class="p-3.5">Preferred Slot</th>
+              <th class="p-3.5">Status</th>
+              <th class="p-3.5">Registered Date</th>
+              <th class="p-3.5 pr-6 text-right">Quick Action</th>
+            </tr>
+          </thead>
+          <tbody id="appts-tbody" class="divide-y divide-slate-100">
+            <tr><td colspan="8" class="text-center py-8 text-slate-400">Loading appointments...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 2: Inquiries Table -->
+      <div id="section-inquiries" class="overflow-x-auto hidden">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+              <th class="p-3.5 pl-6">ID</th>
+              <th class="p-3.5">Patient Query / Question</th>
+              <th class="p-3.5">Detected Intent</th>
+              <th class="p-3.5">Matched Service ID</th>
+              <th class="p-3.5">Confidence</th>
+              <th class="p-3.5 pr-6">Date & Time</th>
+            </tr>
+          </thead>
+          <tbody id="inq-tbody" class="divide-y divide-slate-100">
+            <tr><td colspan="6" class="text-center py-8 text-slate-400">Loading inquiries...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentTab = 'appts';
+    let allAppointments = [];
+    let allInquiries = [];
+
+    async function loadAllData() {
+      try {
+        const [statsRes, apptsRes, inqRes] = await Promise.all([
+          fetch('/api/stats'),
+          fetch('/api/appointments'),
+          fetch('/api/inquiries')
+        ]);
+
+        const stats = await statsRes.json();
+        document.getElementById('stat-total-appts').innerText = stats.total_appointments || 0;
+        document.getElementById('stat-today-appts').innerText = stats.today_appointments || 0;
+        document.getElementById('stat-pending-calls').innerText = stats.pending_calls || 0;
+        document.getElementById('stat-total-inquiries').innerText = stats.total_inquiries || 0;
+
+        allAppointments = await apptsRes.json();
+        allInquiries = await inqRes.json();
+
+        document.getElementById('count-appts').innerText = allAppointments.length;
+        document.getElementById('count-inq').innerText = allInquiries.length;
+
+        renderAppointments(allAppointments);
+        renderInquiries(allInquiries);
+      } catch (err) {
+        console.error("Dashboard refresh error:", err);
+      }
+    }
+
+    function renderAppointments(list) {
+      const tbody = document.getElementById('appts-tbody');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400">No appointments recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        let badgeColor = 'bg-amber-100 text-amber-800 border-amber-300';
+        if (item.status === 'CONFIRMED') badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        if (item.status === 'CALLED') badgeColor = 'bg-blue-100 text-blue-800 border-blue-300';
+        if (item.status === 'CANCELLED') badgeColor = 'bg-slate-100 text-slate-600 border-slate-300';
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="p-3.5 pl-6 font-mono font-semibold text-slate-700">#${item.id}</td>
+            <td class="p-3.5 font-medium text-slate-900">${escapeHtml(item.patient_name)}</td>
+            <td class="p-3.5">
+              <a href="tel:${item.phone}" class="text-emerald-700 hover:underline font-medium">📞 ${item.phone}</a>
+            </td>
+            <td class="p-3.5 font-medium">${escapeHtml(item.service_requested)}</td>
+            <td class="p-3.5 text-slate-600">${escapeHtml(item.preferred_slot)}</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeColor}">
+                ${item.status}
+              </span>
+            </td>
+            <td class="p-3.5 text-xs text-slate-500 whitespace-nowrap">${item.created_at}</td>
+            <td class="p-3.5 pr-6 text-right space-x-1 whitespace-nowrap">
+              ${item.status !== 'CONFIRMED' ? `
+                <button onclick="updateStatus(${item.id}, 'CONFIRMED')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2 py-1 rounded shadow-xs">
+                  Confirm
+                </button>
+              ` : ''}
+              ${item.status !== 'CALLED' && item.status !== 'CONFIRMED' ? `
+                <button onclick="updateStatus(${item.id}, 'CALLED')" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] px-2 py-1 rounded shadow-xs">
+                  Mark Called
+                </button>
+              ` : ''}
+              ${item.status !== 'CANCELLED' ? `
+                <button onclick="updateStatus(${item.id}, 'CANCELLED')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] px-2 py-1 rounded">
+                  Cancel
+                </button>
+              ` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderInquiries(list) {
+      const tbody = document.getElementById('inq-tbody');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400">No inquiries logged yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => `
+        <tr class="hover:bg-slate-50/80 transition">
+          <td class="p-3.5 pl-6 font-mono text-slate-500">#${item.id}</td>
+          <td class="p-3.5 font-medium text-slate-900 max-w-xs break-words">${escapeHtml(item.user_query)}</td>
+          <td class="p-3.5">
+            <span class="bg-slate-100 text-slate-700 border border-slate-300 text-[11px] px-2 py-0.5 rounded-full font-mono">
+              ${item.intent}
+            </span>
+          </td>
+          <td class="p-3.5 text-slate-600 font-mono text-xs">${item.matched_services || '-'}</td>
+          <td class="p-3.5 font-semibold ${item.confidence >= 0.70 ? 'text-emerald-700' : 'text-amber-600'}">
+            ${Math.round((item.confidence || 0) * 100)}%
+          </td>
+          <td class="p-3.5 pr-6 text-xs text-slate-500 whitespace-nowrap">${item.created_at}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function updateStatus(apptId, newStatus) {
+      try {
+        await fetch(`/api/appointments/${apptId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        await loadAllData();
+      } catch (err) {
+        alert("Could not update status.");
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const apptsBtn = document.getElementById('tab-appts-btn');
+      const inqBtn = document.getElementById('tab-inq-btn');
+      const apptsSec = document.getElementById('section-appts');
+      const inqSec = document.getElementById('section-inquiries');
+      const exportBtn = document.getElementById('export-btn');
+
+      if (tab === 'appts') {
+        apptsBtn.className = "px-4 py-2 rounded-lg text-sm font-semibold transition bg-emerald-800 text-white shadow-sm";
+        inqBtn.className = "px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-slate-600 hover:bg-slate-100 border border-slate-200";
+        apptsSec.classList.remove('hidden');
+        inqSec.classList.add('hidden');
+        exportBtn.href = "/api/export/appointments.csv";
+      } else {
+        inqBtn.className = "px-4 py-2 rounded-lg text-sm font-semibold transition bg-emerald-800 text-white shadow-sm";
+        apptsBtn.className = "px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-slate-600 hover:bg-slate-100 border border-slate-200";
+        inqSec.classList.remove('hidden');
+        apptsSec.classList.add('hidden');
+        exportBtn.href = "/api/export/inquiries.csv";
+      }
+      filterCurrentTable();
+    }
+
+    function filterCurrentTable() {
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      if (currentTab === 'appts') {
+        const filtered = allAppointments.filter(a => 
+          (a.patient_name || '').toLowerCase().includes(q) ||
+          (a.phone || '').includes(q) ||
+          (a.service_requested || '').toLowerCase().includes(q) ||
+          (a.status || '').toLowerCase().includes(q)
+        );
+        renderAppointments(filtered);
+      } else {
+        const filtered = allInquiries.filter(i => 
+          (i.user_query || '').toLowerCase().includes(q) ||
+          (i.intent || '').toLowerCase().includes(q) ||
+          (i.matched_services || '').toLowerCase().includes(q)
+        );
+        renderInquiries(filtered);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Load immediately on page open, and refresh every 15 seconds automatically
+    loadAllData();
+    setInterval(loadAllData, 15000);
+  </script>
+</body>
+</html>

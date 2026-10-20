@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dar ul Shifa Diagnostic Center - Mumbai</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col items-center justify-center p-2 sm:p-4 font-sans">
+  <div class="w-full max-w-xl bg-white rounded-2xl shadow-xl flex flex-col h-[94vh] sm:h-[90vh] overflow-hidden border border-slate-200">
+    <!-- Header -->
+    <div class="bg-emerald-800 text-white p-4 flex items-center justify-between shadow-md">
+      <div>
+        <h1 class="font-bold text-lg sm:text-xl flex items-center gap-2">
+          <span>🏥</span> Dar ul Shifa Diagnostic Center
+        </h1>
+        <p class="text-xs text-emerald-100">Blood Tests • USG • Digital X-Ray • Physiotherapy • OPD (Mumbai)</p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></span>
+        <span class="bg-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">Online</span>
+      </div>
+    </div>
+
+    <!-- Quick Chips -->
+    <div class="bg-slate-50 px-3 py-2 border-b flex gap-2 overflow-x-auto text-xs whitespace-nowrap scrollbar-thin">
+      <button onclick="sendQuick('Blood test rates aur fasting rules batao')" class="bg-white border border-emerald-700 text-emerald-800 px-3 py-1.5 rounded-full hover:bg-emerald-50 transition shadow-sm">🩸 Blood Tests</button>
+      <button onclick="sendQuick('Abdomen Sonography price and preparation')" class="bg-white border border-emerald-700 text-emerald-800 px-3 py-1.5 rounded-full hover:bg-emerald-50 transition shadow-sm">🖥️ Sonography (USG)</button>
+      <button onclick="sendQuick('Chest aur Knee X-Ray charges')" class="bg-white border border-emerald-700 text-emerald-800 px-3 py-1.5 rounded-full hover:bg-emerald-50 transition shadow-sm">🩻 Digital X-Ray</button>
+      <button onclick="sendQuick('Physiotherapy session charges')" class="bg-white border border-emerald-700 text-emerald-800 px-3 py-1.5 rounded-full hover:bg-emerald-50 transition shadow-sm">🏃 Physiotherapy</button>
+      <button onclick="sendQuick('Doctor OPD consultation timings')" class="bg-white border border-emerald-700 text-emerald-800 px-3 py-1.5 rounded-full hover:bg-emerald-50 transition shadow-sm">🩺 Doctor OPD</button>
+      <button onclick="sendQuick('Book Appointment')" class="bg-emerald-700 text-white px-3.5 py-1.5 rounded-full hover:bg-emerald-800 transition font-medium shadow-sm">📅 Book Slot</button>
+    </div>
+
+    <!-- Chat Messages -->
+    <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
+      <div class="bg-slate-100 text-slate-800 p-3.5 rounded-2xl max-w-[90%] shadow-sm leading-relaxed border border-slate-200">
+        <strong>Assalamu Alaikum / Namaste!</strong> Welcome to <strong>Dar ul Shifa Diagnostic Center (Mumbai)</strong>.<br><br>
+        Feel free to ask me in <strong>English, Hinglish, Marathi, or Urdu</strong> about:<br>
+        • <strong>Blood Tests</strong> (CBC, Sugar, Lipid, Thyroid, Monsoon Fever Profile)<br>
+        • <strong>Ultrasound / Sonography (USG)</strong> & Preparation<br>
+        • <strong>Digital X-Ray</strong> (Chest, Spine, Knee)<br>
+        • <strong>Physiotherapy Rehab</strong> & <strong>Doctor OPD Timings</strong>
+      </div>
+    </div>
+
+    <!-- Input Box -->
+    <form id="chat-form" class="p-3 border-t bg-white flex gap-2">
+      <input
+        id="user-input"
+        type="text"
+        placeholder="Type your question (e.g. Khali pet sugar aur sonography)..."
+        class="flex-1 border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-700 shadow-inner"
+        required
+      />
+      <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md transition flex items-center gap-1">
+        Send <span>➤</span>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const sessionId = "sess_" + Math.random().toString(36).substring(2, 10);
+    const chatBox = document.getElementById("chat-box");
+    const chatForm = document.getElementById("chat-form");
+    const userInput = document.getElementById("user-input");
+
+    // Patch 1: Escape HTML before markdown bold formatting to prevent XSS
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function appendMessage(text, isUser) {
+      const div = document.createElement("div");
+      div.className = isUser
+        ? "bg-emerald-700 text-white p-3.5 rounded-2xl max-w-[85%] ml-auto whitespace-pre-wrap shadow-sm leading-relaxed"
+        : "bg-slate-100 text-slate-800 p-3.5 rounded-2xl max-w-[90%] whitespace-pre-wrap shadow-sm leading-relaxed border border-slate-200";
+      
+      div.innerHTML = escapeHtml(text).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage(messageText) {
+      appendMessage(messageText, true);
+      userInput.value = "";
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, message: messageText }),
+        });
+        const data = await res.json();
+        appendMessage(data.reply, false);
+      } catch (err) {
+        appendMessage("Connection error. Please call reception directly at +91-22-23456789.", false);
+      }
+    }
+
+    function sendQuick(text) {
+      sendMessage(text);
+    }
+
+    chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (userInput.value.trim()) sendMessage(userInput.value.trim());
+    });
+  </script>
+</body>
+</html>

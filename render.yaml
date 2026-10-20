@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: dar-ul-shifa-bot
+    env: python
+    buildCommand: pip install -r requirements.txt && python -m app.seed_data
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: CLINIC_NAME
+        value: "Dar ul Shifa Diagnostic Center"
+      - key: CLINIC_PHONE
+        value: "+91-22-23456789"
+      - key: CLINIC_WHATSAPP
+        value: "+91-9876543210"
+      - key: CLINIC_ADDRESS
+        value: "Ground Floor, Dar ul Shifa Clinic, Mumbai, Maharashtra"
+      - key: CLINIC_TIMINGS
+        value: "Monday to Saturday: 7:30 AM – 9:00 PM | Sunday: 8:00 AM – 2:00 PM"
